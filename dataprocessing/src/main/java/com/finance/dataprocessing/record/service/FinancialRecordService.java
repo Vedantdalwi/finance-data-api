@@ -24,6 +24,8 @@ public interface FinancialRecordService {
             Instant startDate,
             Instant endDate,
             TransactionType type,
-            String category
+            String category,
+            String search,
+            Integer pageNo
     );
 }
