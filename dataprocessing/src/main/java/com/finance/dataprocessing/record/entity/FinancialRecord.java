@@ -60,6 +60,4 @@ public class FinancialRecord {
     @UpdateTimestamp
     private Instant updatedAt;
 	
-	
-
 }
