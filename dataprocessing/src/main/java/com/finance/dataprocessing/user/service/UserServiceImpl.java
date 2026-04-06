@@ -1,9 +1,13 @@
 package com.finance.dataprocessing.user.service;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.finance.dataprocessing.common.exception.NotFoundException;
+import com.finance.dataprocessing.jwt.JwtUtil;
+import com.finance.dataprocessing.common.exception.ConflictException;
 import com.finance.dataprocessing.user.dto.LoginRequestDto;
 import com.finance.dataprocessing.user.dto.UserRequestDto;
 import com.finance.dataprocessing.user.dto.UserResponseDto;
@@ -25,7 +29,10 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepository;
-	private final BCryptPasswordEncoder passwordEncoder;
+	private final PasswordEncoder passwordEncoder;
+	
+	@Autowired
+	private JwtUtil jwtUtil;
 
     @Override
     public UserResponseDto createUser(UserRequestDto request) {
@@ -34,11 +41,11 @@ public class UserServiceImpl implements UserService {
         String userName = request.getUserName().toLowerCase();
 
         if (userRepository.existsByEmail(email)) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         if (userRepository.existsByUserName(userName)) {
-            throw new RuntimeException("Username already exists");
+            throw new ConflictException("Username already exists");
         }
 
         User user = new User();
@@ -51,27 +58,32 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
 
-        return mapToDto(savedUser);
+        UserResponseDto response = mapToDto(savedUser);
+        response.setToken(jwtUtil.generateToken(user.getEmail())); 
+        return response;
     }
     
     @Override
     public UserResponseDto login(LoginRequestDto request) {
 
         User user = userRepository.findByEmail(request.getEmail().toLowerCase())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new RuntimeException("Invalid credentials"));// todo : fix
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new RuntimeException("Invalid credentials");// todo : fix
         }
 
         if (user.getStatus() == UserStatus.INACTIVE) {
-            throw new RuntimeException("User is inactive");
+            throw new RuntimeException("User is inactive");// todo : fix
         }
 
         user.setLastLoginAt(Instant.now());
+        
         userRepository.save(user);
-
-        return mapToDto(user);
+        
+        UserResponseDto response = mapToDto(user);
+        response.setToken(jwtUtil.generateToken(user.getEmail())); 
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -79,7 +91,7 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto getUserById(UUID id) {
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         return mapToDto(user);
     }
@@ -98,7 +110,7 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto updateUser(UUID id, UserUpdateDto request) {
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (request.getFullName() != null) {
             user.setFullName(request.getFullName());
@@ -121,7 +133,7 @@ public class UserServiceImpl implements UserService {
     public void deactivateUser(UUID id) {
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         user.setStatus(UserStatus.INACTIVE);
 
@@ -132,7 +144,7 @@ public class UserServiceImpl implements UserService {
     public void activateUser(UUID id) {
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         user.setStatus(UserStatus.ACTIVE);
 

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.finance.dataprocessing.common.exception.NotFoundException;
 import com.finance.dataprocessing.record.dto.FinancialRecordRequestDto;
 import com.finance.dataprocessing.record.dto.FinancialRecordResponseDto;
 import com.finance.dataprocessing.record.dto.FinancialRecordUpdateDto;
@@ -38,7 +39,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     public FinancialRecordResponseDto createRecord(FinancialRecordRequestDto request, UUID userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         FinancialRecord record = new FinancialRecord();
 
@@ -56,7 +57,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         record.setCreatedBy(user);
         record.setIsDeleted(false);
 
-        FinancialRecord saved = financialRecordRepository.save(record);
+        FinancialRecord saved = financialRecordRepository.saveAndFlush(record);
 
         return mapToDto(saved);
     }
@@ -67,10 +68,10 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     public FinancialRecordResponseDto getRecordById(UUID id) {
 
         FinancialRecord record = financialRecordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Record not found"));
+                .orElseThrow(() -> new NotFoundException("Record not found"));
 
         if (Boolean.TRUE.equals(record.getIsDeleted())) {
-            throw new RuntimeException("Record not found");
+            throw new RuntimeException("This record has been deleted");
         }
 
         return mapToDto(record);
@@ -81,7 +82,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     public FinancialRecordResponseDto updateRecord(UUID id, FinancialRecordUpdateDto request) {
 
         FinancialRecord record = financialRecordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Record not found"));
+                .orElseThrow(() -> new NotFoundException("Record not found"));
 
         if (Boolean.TRUE.equals(record.getIsDeleted())) {
             throw new RuntimeException("Record not found");
@@ -117,7 +118,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     public void deleteRecord(UUID id) {
 
         FinancialRecord record = financialRecordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Record not found"));
+                .orElseThrow(() -> new NotFoundException("Record not found"));
 
         if (Boolean.TRUE.equals(record.getIsDeleted())) {
             throw new RuntimeException("Record already deleted");

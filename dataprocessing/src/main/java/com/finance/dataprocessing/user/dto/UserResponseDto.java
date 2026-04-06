@@ -24,6 +24,8 @@ public class UserResponseDto {
     private UserRole role;
 
     private UserStatus status;
+    
+    private String token;
 
     private Instant lastLoginAt;
 
