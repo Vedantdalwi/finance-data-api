@@ -19,6 +19,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<Map<String, Object>> handleBaseException(BaseException ex) {
+    	ex.printStackTrace();
         return ResponseEntity.status(ex.getHttpStatus()).body(Map.of(
                 "success", false,
                 "error", ex.getErrorCode(),
@@ -30,6 +31,7 @@ public class GlobalExceptionHandler {
     // @PreAuthorize fail
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+    	ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                 "success", false,
                 "error", "ACCESS_DENIED",
@@ -41,6 +43,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
+    	ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                 "success", false,
                 "error", "INVALID_CREDENTIALS",
@@ -52,6 +55,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
+    	ex.printStackTrace();
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .findFirst()
@@ -68,6 +72,7 @@ public class GlobalExceptionHandler {
     // catch 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+    	ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                 "success", false,
                 "error", "INTERNAL_ERROR",
